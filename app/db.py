@@ -24,7 +24,7 @@ def insert_documents():
     docs = [
         {"id": 1, "text": "FastAPI is a modern Python web framework"},
         {"id": 2, "text": "PostgreSQL is a powerful relational database"},
-        {"id": 3, "text": "Redis is used for caching and fast access"},
+        {"id": 3, "text": "Redis improves performance by caching frequently accessed data"},
         {"id": 4, "text": "Vector databases enable semantic search"},
     ]
 
@@ -34,7 +34,7 @@ def insert_documents():
             return
 
         vectors = get_embeddings([doc["text"] for doc in docs])
-        print("Vectors:", vectors)
+        
         points = []
         for doc, vector in zip(docs, vectors):
             points.append(
