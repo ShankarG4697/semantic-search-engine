@@ -1,19 +1,29 @@
-from fastapi import FastAPI
-from app.db import create_collection, insert_dummy_data, search_dummy
+from contextlib import asynccontextmanager
+import logging
 
-app = FastAPI()
+from fastapi import FastAPI, HTTPException, Query
+from app.db import create_collection, insert_documents, search
 
-@app.on_event("startup")
-def startup_event():
-    create_collection()
-    insert_dummy_data()
-    
-    
-@app.get("/")
-async def read_root():
-    return {"message": "Hello World"}
+logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    try:
+        create_collection()
+        insert_documents()
+    except RuntimeError as exc:
+        logger.warning("Startup initialization skipped: %s", exc)
+    yield
 
 
-@app.get("/test-search")
-def test_search():
-    return search_dummy()
+app = FastAPI(lifespan=lifespan)
+
+@app.get("/search")
+def search_api(
+    q: str = Query(..., min_length=2, max_length=500, description="Search query"),
+    limit: int = Query(2, ge=1, le=20, description="Top-k results to return"),
+):
+    try:
+        return search(q, limit)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
